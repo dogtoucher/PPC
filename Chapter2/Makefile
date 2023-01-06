@@ -2,8 +2,8 @@ CC = g++
 CFLAGS= -g -O3 -march=native -std=c++17
 OMP_FLAG = -fopenmp
 MAIN=shortcut.o
-OBJ=v0.o v0-omp.o v1.o v1-omp.o v2.o
-OUTS=v0.out v0-omp.out v1.out v1-omp.out v2.out
+OBJ=v0.o v0-omp.o v1.o v1-omp.o v2.o v3.o v4.o
+OUTS=v0.out v0-omp.out v1.out v1-omp.out v2.out v3.out v4.out
 
 all: $(MAIN) $(OBJ) $(OUTS)
 
