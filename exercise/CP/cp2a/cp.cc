@@ -8,27 +8,46 @@ This is the function you need to implement. Quick reference:
 */
 
 #include<cmath>
-
-void correlate(int ny, int nx, const float *data, float *result) {
+#include <vector>
+void correlate(int ny, int nx, const float *data_, float *result) {
 // cal the corr between row i and row j
-    double total[ny]={0.0};
-    double total2[ny]={0.0};
-    double bottom[ny]={0.0};
+    constexpr int nb = 8;
+    int na = (nx-1+nb)/nb;
+    int nab = na*nb;
+    std::vector<double> data(ny*nab, 0.0);
+
+    for (int i = 0; i < ny; ++i) {
+        for (int k = 0; k < nx; ++k) {
+            data[k + i*nab]=data_[k + i*nx];
+        }
+    }   
+
+    std::vector<double> total(ny, 0.0);
+    std::vector<double> total2(ny, 0.0);
+    std::vector<double> bottom(ny, 0.0);
     for (int i=0; i<ny; ++i){
         result[i + i*ny] = 1;
         for (int k=0; k<nx; ++k){
-            total[i] += double(data[k + i*nx]);
-            total2[i] += double(data[k + i*nx])*double(data[k + i*nx]);
+            total[i] += double(data[k + i*nab]);
+            total2[i] += double(data[k + i*nab])*double(data[k + i*nab]);
         }
         bottom[i] = sqrt(total2[i]*nx-total[i]*total[i]);
     }
+
     for (int i=0; i<ny; ++i){
         for (int j=0; j<i; ++j){
-            double total_ij=0.0;
-            for (int k=0; k<nx; ++k){
-                total_ij += double(data[k + i*nx])*double(data[k + j*nx]);
+            double total_ij[nb]={0.0};
+            for (int ka=0; ka<na; ++ka){
+                for (int kb=0; kb<nb; ++kb){
+                    total_ij[kb] += double(data[kb + nb*ka + i*nab])*double(data[kb + nb*ka + j*nab]);
+                }   
             }
-            double top=total_ij*nx-(total[i]*total[j]);
+
+            double total_ij_ = 0.0;
+            for (int k=0; k<nb; k++){
+                total_ij_+=total_ij[k];
+            }
+            double top=total_ij_*nx-(total[i]*total[j]);
             double bottom_=bottom[i]*bottom[j];
             result[i + j*ny]=float(top/bottom_);
         }
