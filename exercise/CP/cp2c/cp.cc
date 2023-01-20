@@ -11,6 +11,14 @@ This is the function you need to implement. Quick reference:
 #include <vector>
 
 typedef double double4_t __attribute__ ((vector_size (4*sizeof(double))));
+static inline double sum4(double4_t vd) {
+    return vd[0]+vd[1]+vd[2]+vd[3];
+}
+
+static inline double summul4(double4_t vd1, double4_t vd2) {
+    return sum4(vd1*vd2);
+}
+
 void correlate(int ny, int nx, const float *data_, float *result) {
 // cal the corr between row i and row j
     constexpr int nb = 4;
@@ -34,34 +42,21 @@ void correlate(int ny, int nx, const float *data_, float *result) {
     for (int i=0; i<ny; ++i){
         result[i + i*ny] = 1;
     }
-    
     for (int i=0; i<ny; ++i){
         for (int ka=0; ka<na; ++ka){
-            for (int kb=0; kb<nb; ++kb){
-                total[i] += vdata[na*i+ka][kb];
-                total2[i] += vdata[na*i+ka][kb]*vdata[na*i+ka][kb];
-            }
+            total[i] += sum4(vdata[na*i+ka]);
+            total2[i] += summul4(vdata[na*i+ka], vdata[na*i+ka]);
         }
         bottom[i] = sqrt(total2[i]*nx-total[i]*total[i]);
     }
 
     for (int i=0; i<ny; ++i){
         for (int j=0; j<i; ++j){
-            // std::vector<double> total_ij(nb, 0.0);
-            double total_ij[nb];//={0.0};
-            for (int kb=0; kb<nb; ++kb){
-                total_ij[kb]=0.0;
-            }
+            double total_ij=0.0;
             for (int ka=0; ka<na; ++ka){
-                for (int kb=0; kb<nb; ++kb){
-                    total_ij[kb] += vdata[na*i+ka][kb]*vdata[na*j+ka][kb];
-                }   
+                total_ij += summul4(vdata[na*i+ka], vdata[na*j+ka]); 
             }
-            double total_ij_ = 0.0;
-            for (int kb=0; kb<nb; ++kb){
-                total_ij_+=total_ij[kb];
-            }
-            double top=total_ij_*nx-(total[i]*total[j]);
+            double top=total_ij*nx-(total[i]*total[j]);
             double bottom_=bottom[i]*bottom[j];
             result[i + j*ny]=float(top/bottom_);
         }
