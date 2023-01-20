@@ -1,2 +1,2 @@
 # PPC
-Solutions for Programming Parallel Computers Course (Aalto)
+Solutions to [Programming Parallel Computers Course](https://ppc.cs.aalto.fi/) 
