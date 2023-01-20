@@ -11,34 +11,18 @@ This is the function you need to implement. Quick reference:
 #include <vector>
 
 typedef double double4_t __attribute__ ((vector_size (4*sizeof(double))));
-
-static double4_t* double4_alloc(std::size_t n) {
-    void* tmp = 0;
-    if (posix_memalign(&tmp, sizeof(double4_t), sizeof(double4_t) * n)) {
-        throw std::bad_alloc();
-    }
-    return (double4_t*)tmp;
-}
-constexpr double4_t d8init {
-    0.0, 0.0, 0.0, 0.0
-};
-
-
 void correlate(int ny, int nx, const float *data_, float *result) {
 // cal the corr between row i and row j
     constexpr int nb = 4;
     int na = (nx-1+nb)/nb;
 
-    // init vdata
-    double4_t* vdata = double4_alloc(na*ny);
-    // int nab = na*nb;
-    // std::vector<double> data(ny*nab, 0.0);
+    std::vector<double4_t> vdata(ny*na);
+
     for (int i = 0; i < ny; ++i) {
         for (int ka = 0; ka < na; ++ka) {
             for (int kb = 0; kb < nb; ++kb){
-                // data[k + i*nab]=data_[k + i*nx];
-                int j=ka*nb+kb;
-                vdata[na*i+ka][kb] = j<ny? data_[j+i*nx] : 0.0;
+                int j = ka*nb+kb;
+                vdata[na*i+ka][kb] = j<nx ? data_[j+i*nx] : 0.0;
             }
         }
     }   
@@ -52,9 +36,11 @@ void correlate(int ny, int nx, const float *data_, float *result) {
     }
     
     for (int i=0; i<ny; ++i){
-        for (int k=0; k<nx; ++k){
-            total[i] += double(data[k + i*nab]);
-            total2[i] += double(data[k + i*nab])*double(data[k + i*nab]);
+        for (int ka=0; ka<na; ++ka){
+            for (int kb=0; kb<nb; ++kb){
+                total[i] += vdata[na*i+ka][kb];
+                total2[i] += vdata[na*i+ka][kb]*vdata[na*i+ka][kb];
+            }
         }
         bottom[i] = sqrt(total2[i]*nx-total[i]*total[i]);
     }
@@ -68,7 +54,7 @@ void correlate(int ny, int nx, const float *data_, float *result) {
             }
             for (int ka=0; ka<na; ++ka){
                 for (int kb=0; kb<nb; ++kb){
-                    total_ij[kb] += double(data[kb + nb*ka + i*nab])*double(data[kb + nb*ka + j*nab]);
+                    total_ij[kb] += vdata[na*i+ka][kb]*vdata[na*j+ka][kb];
                 }   
             }
             double total_ij_ = 0.0;
